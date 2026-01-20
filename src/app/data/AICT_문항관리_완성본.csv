@@ -1,0 +1,58 @@
+﻿### Part1_AI리터러시 ###
+id,type,text,keyTerms,optionA_text,optionA_correct,optionB_text,optionB_correct,optionC_text,optionC_correct,optionD_text,optionD_correct,situation
+p1q1,mcq,LLM(대규모 언어 모델)에 대한 설명으로 가장 적절한 것은?,"LLM,언어 모델,대규모",웹사이트를 자동으로 해킹하는 보안 프로그램이다,FALSE,대량의 텍스트로 학습해 다음 단어를 예측하며 문장을 생성하는 모델이다,TRUE,이미지 픽셀을 분류해 색상을 바꾸는 필터 모델이다,FALSE,인터넷 검색 결과를 그대로 복사해 답을 출력하는 모델이다,FALSE,
+p1q2,mcq,AI '환각(Hallucination)' 현상에 대한 설명으로 올바른 것은?,"환각,hallucination,AI 오류",AI가 존재하지 않는 정보를 사실인 것처럼 생성하는 현상이다,TRUE,AI가 이미지를 3D로 변환할 때 발생하는 왜곡이다,FALSE,사용자가 AI의 응답을 잘못 해석하는 현상이다,FALSE,AI 모델이 과부하로 인해 작동을 멈추는 현상이다,FALSE,
+p1q3,mcq,AI 어시스턴트를 업무에 활용할 때 가장 적절한 접근 방식은?,"AI 활용,검증,업무",AI 응답을 그대로 사용해 시간을 절약한다,FALSE,AI는 신뢰할 수 없으므로 사용하지 않는다,FALSE,AI 응답을 참고하되 중요한 정보는 반드시 검증한다,TRUE,AI에게 모든 의사결정을 위임한다,FALSE,
+p1q4,mcq,프롬프트 엔지니어링의 핵심 목적은?,"프롬프트 엔지니어링,최적화",AI 모델의 학습 데이터를 수정하는 것,FALSE,AI에게 명확한 지시를 제공해 원하는 결과를 얻는 것,TRUE,AI 모델의 속도를 높이는 것,FALSE,AI 모델의 메모리 사용량을 줄이는 것,FALSE,
+p1q5,risk,이 상황에서 가장 큰 위험은 무엇인가요?,"개인정보,보안,위험",AI 응답 속도가 느려질 수 있다,FALSE,개인정보가 AI 학습 데이터로 사용될 수 있다,TRUE,AI가 더 창의적인 응답을 생성한다,FALSE,비용이 증가할 수 있다,FALSE,"마케팅 담당자가 고객 이름, 연락처, 구매 이력이 포함된 엑셀 파일을 AI에게 업로드하여 고객 세그먼트 분석을 요청했습니다."
+p1q6,mcq,AI 생성 콘텐츠의 저작권에 대한 설명으로 가장 정확한 것은?,"저작권,AI 콘텐츠,법률",AI가 생성한 모든 콘텐츠는 자동으로 사용자에게 저작권이 귀속된다,FALSE,"AI 생성 콘텐츠의 저작권은 국가별, 상황별로 다르며 법적 불확실성이 존재한다",TRUE,AI 생성 콘텐츠는 저작권법의 적용을 받지 않는다,FALSE,AI 회사가 모든 생성 콘텐츠의 저작권을 소유한다,FALSE,
+p1q7,mcq,AI 모델의 '토큰(Token)'에 대한 설명으로 올바른 것은?,"토큰,token,처리 단위",AI가 텍스트를 처리하는 기본 단위로 단어나 단어의 일부를 의미한다,TRUE,AI 서비스 결제에 사용되는 가상 화폐이다,FALSE,AI 모델의 보안 인증 키이다,FALSE,AI 학습에 사용된 데이터의 출처를 나타낸다,FALSE,
+p1q8,risk,이 상황에서 가장 적절한 대응은?,"기밀정보,보안,대응",AI가 정확한 분석을 위해 모든 정보를 입력한다,FALSE,민감 정보를 익명화하거나 제거한 후 분석을 요청한다,TRUE,다른 AI 서비스를 사용해 본다,FALSE,AI 사용을 포기하고 수동으로 분석한다,FALSE,법무팀 직원이 계약서 검토를 위해 AI에게 자사와 파트너사 간의 기밀 계약서 전문을 붙여넣기 하려고 합니다.
+
+
+
+
+
+### Part2_프롬프트리터러시 ###
+id,type,instruction,prompt,originalPrompt,blocks_json,steps_json,issues_json,requirements_json,correctOrder,minWords
+p2q1,dragdrop,아래 블록들을 올바른 순서로 배치하여 효과적인 프롬프트를 완성하시오.,,,"[{""id"": ""1"", ""text"": ""너는 10년 경력의 시니어 마케터다."", ""category"": ""역할"", ""correctOrder"": 1}, {""id"": ""2"", ""text"": ""B2B SaaS 제품의 런칭 캠페인을 기획하고 있다."", ""category"": ""맥락"", ""correctOrder"": 2}, {""id"": ""3"", ""text"": ""예산은 5천만원이며 3개월 내 리드 500건이 목표다."", ""category"": ""제약조건"", ""correctOrder"": 3}, {""id"": ""4"", ""text"": ""채널별 예산 배분과 예상 ROI를 포함한 캠페인 계획서를 작성해줘."", ""category"": ""출력지시"", ""correctOrder"": 4}, {""id"": ""5"", ""text"": ""표 형식으로 정리하고 각 채널별 근거도 설명해줘."", ""category"": ""포맷"", ""correctOrder"": 5}]",,,,"1,2,3,4,5",
+p2q2,highlight,다음 프롬프트에서 문제가 되는 부분을 모두 선택하시오.,우리 회사 내부 매출 데이터를 분석해서 김철수 고객(010-1234-5678)의 구매 패턴과 다른 VIP 고객들의 신용카드 정보를 비교해줘. 빠르게 해줘.,,,,"[{""id"": ""i1"", ""label"": ""개인정보 포함 (전화번호)"", ""isCorrect"": true}, {""id"": ""i2"", ""label"": ""민감 금융정보 요청"", ""isCorrect"": true}, {""id"": ""i3"", ""label"": ""내부 기밀 데이터 언급"", ""isCorrect"": true}, {""id"": ""i4"", ""label"": ""역할 정의 부재"", ""isCorrect"": false}, {""id"": ""i5"", ""label"": ""출력 형식 미지정"", ""isCorrect"": false}, {""id"": ""i6"", ""label"": ""구체적인 맥락 부족"", ""isCorrect"": false}]",,,
+p2q3,rewrite,다음 프롬프트를 요구조건에 맞게 개선하시오.,,좋은 이메일 써줘,,,,"[""명확한 역할 부여"", ""구체적인 상황 설명"", ""원하는 출력 형식 지정"", ""톤앤매너 명시""]",,50
+p2q4,ordering,효과적인 프롬프트 작성을 위한 사고 과정을 올바른 순서로 배열하시오.,,,,"[{""id"": ""s1"", ""text"": ""달성하고자 하는 목표를 명확히 정의한다"", ""correctOrder"": 1}, {""id"": ""s2"", ""text"": ""필요한 배경 정보와 맥락을 정리한다"", ""correctOrder"": 2}, {""id"": ""s3"", ""text"": ""제약조건과 요구사항을 명시한다"", ""correctOrder"": 3}, {""id"": ""s4"", ""text"": ""원하는 출력 형식과 포맷을 지정한다"", ""correctOrder"": 4}, {""id"": ""s5"", ""text"": ""프롬프트를 테스트하고 결과를 검증한다"", ""correctOrder"": 5}]",,,"s1,s2,s3,s4,s5",
+
+
+
+
+
+### Part3_직무시나리오 ###
+id,role,scenario,scenarioTitle,scenarioDesc,context_json,taskType,title,instruction,requirements_json,aiDraft_json,aiMessagesLimit,minLines
+p3t1,pmkt,pmkt,퍼포먼스 마케팅,당신은 IMC 대행사 퍼포먼스 마케팅 팀 신입입니다. B2B SaaS 광고주의 리드 확보 캠페인을 담당하게 되었습니다.,"[""목표(KPI): 리드 300건 / CPA 18,000원 이하"", ""예산: 6,000,000원 (2주)"", ""타겟: 중소기업 경영자/HR 담당자"", ""제품: 클라우드 기반 인사관리 솔루션""]",execute,실행형 — 광고주 공유용 운영안,광고주에게 공유할 1페이지 운영안을 작성하라. AI 어시스턴트를 활용할 수 있습니다.,"[""매체 믹스/예산 배분 표"", ""핵심 크리에이티브 메시지 3개"", ""일별 예산 페이싱 계획"", ""예상 성과 시뮬레이션""]",,3,18
+
+
+
+
+
+### Part3_루브릭 ###
+taskId,weight,totalPoints,passThreshold,level1_indicator,level2_indicator,level3_indicator,level4_indicator
+p3t1,1.0,100,80,캠페인 구조가 불명확하거나 타겟팅이 부적절함. KPI와 예산의 연관성이 없음.,기본적인 캠페인 구조는 있으나 최적화 전략이 부족함. 매체별 특성 이해 미흡.,"명확한 캠페인 구조와 타겟팅, KPI 설정이 적절함. 매체별 역할이 구분됨.","A/B 테스트, 예산 배분 최적화, 성과 예측까지 포함한 종합 전략. 리스크 대응 방안 포함."
+
+
+
+
+
+### 직군코드_참조 ###
+roleId,label,description
+pmkt,퍼포먼스 마케팅,"광고 캠페인 운영, 성과 분석"
+brand,SNS/브랜드 마케팅,"브랜드 콘텐츠, 소셜미디어 운영"
+hr,HR(인사/노무),"채용, 인사관리, 노무"
+qa,QA(소프트웨어),"품질보증, 테스트"
+biz,사업기획/전략,"사업계획, 전략 수립"
+fin,재무/회계,"예산, 결산, 재무분석"
+ops,운영/PMO,"프로젝트 관리, 운영"
+adm,구매/총무/계약,"구매, 계약, 총무"
+crm-se,CRM 소프트웨어 엔지니어,CRM 시스템 개발
+auto-dm,Automotive DM,자동차 디지털 마케팅
+game-client,게임 클라이언트 프로그래머,게임 클라이언트 개발
+sec-res,보안 연구원,"보안 연구, 취약점 분석"
+sf-dev,세일즈포스 개발자,Salesforce 개발
+game-lead,게임 리드/대표,게임 프로젝트 리드
