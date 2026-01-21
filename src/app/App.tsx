@@ -12,7 +12,7 @@ import { Admin } from './pages/Admin';
 export default function App() {
   return (
     <ExamProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/aict-platform">
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/practice" element={<Practice />} />

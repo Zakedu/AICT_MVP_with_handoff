@@ -78,7 +78,7 @@ export function PromptEditor({ task, onSave, initialContent = '', apiKey }: Prom
             <FileText className="w-5 h-5" style={{ color: COLORS.navy }} />
             <h3 className="font-bold" style={{ color: COLORS.navy }}>시나리오</h3>
           </div>
-          <p className="text-sm leading-relaxed mb-4" style={{ color: COLORS.navy }}>
+          <p className="text-sm leading-relaxed mb-4 whitespace-pre-wrap" style={{ color: COLORS.navy }}>
             {task.scenarioDesc}
           </p>
 
@@ -133,11 +133,10 @@ export function PromptEditor({ task, onSave, initialContent = '', apiKey }: Prom
       <div className="flex flex-col h-full">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-4">
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold" style={{ color: COLORS.navy }}>{task.title}</h2>
-            <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{task.instruction.split('\n')[0]}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span
               className="px-3 py-1.5 rounded-lg text-sm font-medium"
               style={{
@@ -148,6 +147,11 @@ export function PromptEditor({ task, onSave, initialContent = '', apiKey }: Prom
               AI 테스트: {remainingTests}/{maxAiTests}
             </span>
           </div>
+        </div>
+
+        {/* 지시사항 */}
+        <div className="rounded-lg p-4 mb-4 border" style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}>
+          <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: COLORS.navy }}>{task.instruction}</p>
         </div>
 
         {/* 에디터 */}

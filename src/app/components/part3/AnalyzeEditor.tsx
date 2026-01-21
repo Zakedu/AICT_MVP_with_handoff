@@ -65,7 +65,7 @@ export function AnalyzeEditor({ task, onSave, initialContent = '' }: AnalyzeEdit
             <FileText className="w-5 h-5" style={{ color: COLORS.navy }} />
             <h3 className="font-bold" style={{ color: COLORS.navy }}>시나리오</h3>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: COLORS.navy }}>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.navy }}>
             {task.scenarioDesc}
           </p>
 
