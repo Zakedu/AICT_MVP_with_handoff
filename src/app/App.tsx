@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ExamProvider } from './context/ExamContext';
 import { Landing } from './pages/Landing';
+import { Home } from './pages/Home';
 import { RulesConsent } from './pages/RulesConsent';
 import { Practice } from './pages/Practice';
 import { Part1 } from './pages/Part1';
@@ -14,7 +15,8 @@ export default function App() {
     <ExamProvider>
       <BrowserRouter basename="/aict-platform">
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Home />} />
+                    <Route path="/landing" element={<Landing />} />
           <Route path="/practice" element={<Practice />} />
           <Route path="/rules" element={<RulesConsent />} />
           <Route path="/part1" element={<Part1 />} />
