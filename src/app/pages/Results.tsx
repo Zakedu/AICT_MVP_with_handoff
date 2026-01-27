@@ -50,128 +50,328 @@ const COLORS = {
 // 데모 모드 데이터
 const DEMO_MODE = true; // 데모용 (나중에 false로 변경)
 
-const DEMO_SCORES = {
-  part1Correct: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q8', 'q9', 'q10', 'q11', 'q12'], // 12개 중 11개 정답
-  part2Correct: ['dragdrop', 'ordering', 'highlight'], // 4개 중 3개 정답
-  part3Results: [
-    { taskId: 'task1', score: 18, maxScore: 20, feedback: '프롬프트가 명확하고 구조적입니다.' },
-    { taskId: 'task2', score: 16, maxScore: 20, feedback: '개인정보 보호 관점이 잘 반영되었습니다.' },
-    { taskId: 'task3', score: 14, maxScore: 20, feedback: '결과 검증 부분을 보완하면 좋겠습니다.' },
+// 데모 시나리오 타입: 'pass_high' | 'pass_normal' | 'fail_close' | 'fail_low'
+type DemoScenario = 'pass_high' | 'pass_normal' | 'fail_close' | 'fail_low';
+
+// URL 파라미터나 localStorage에서 데모 시나리오 가져오기
+const getDemoScenario = (): DemoScenario => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const scenario = params.get('demo') as DemoScenario;
+    if (scenario && ['pass_high', 'pass_normal', 'fail_close', 'fail_low'].includes(scenario)) {
+      return scenario;
+    }
+  }
+  return 'pass_normal'; // 기본값
+};
+
+// 시나리오별 데모 점수 데이터
+const DEMO_SCENARIOS: Record<DemoScenario, {
+  part1Correct: string[];
+  part2Correct: string[];
+  part3Scores: { defining: number; prompting: number; protecting: number; refining: number; acumen: number; integrating: number };
+  description: string;
+}> = {
+  // 고득점 합격 (90점대)
+  pass_high: {
+    part1Correct: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12'], // 12개 전부 정답
+    part2Correct: ['dragdrop', 'ordering', 'highlight', 'rewrite'], // 4개 전부 정답
+    part3Scores: { defining: 12, prompting: 14, protecting: 12, refining: 10, acumen: 12, integrating: 12 }, // 72/60 -> 실제로는 max로 제한
+    description: '우수한 성적으로 합격',
+  },
+  // 일반 합격 (70~80점대)
+  pass_normal: {
+    part1Correct: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q8', 'q9', 'q10', 'q11', 'q12'], // 12개 중 11개 정답
+    part2Correct: ['dragdrop', 'ordering', 'highlight'], // 4개 중 3개 정답
+    part3Scores: { defining: 10, prompting: 12, protecting: 10, refining: 8, acumen: 10, integrating: 10 },
+    description: '합격 기준 충족',
+  },
+  // 아쉬운 불합격 (65~69점)
+  fail_close: {
+    part1Correct: ['q1', 'q2', 'q3', 'q5', 'q6', 'q8', 'q9', 'q10'], // 12개 중 8개 정답
+    part2Correct: ['dragdrop', 'ordering'], // 4개 중 2개 정답
+    part3Scores: { defining: 8, prompting: 10, protecting: 8, refining: 6, acumen: 8, integrating: 8 },
+    description: '합격까지 조금 부족',
+  },
+  // 낮은 점수 불합격 (50점대 이하)
+  fail_low: {
+    part1Correct: ['q1', 'q3', 'q5', 'q8', 'q10'], // 12개 중 5개 정답
+    part2Correct: ['dragdrop'], // 4개 중 1개 정답
+    part3Scores: { defining: 5, prompting: 6, protecting: 4, refining: 4, acumen: 5, integrating: 4 },
+    description: '기초 역량 강화 필요',
+  },
+};
+
+// 현재 데모 시나리오
+const CURRENT_DEMO_SCENARIO = getDemoScenario();
+const DEMO_SCORES = DEMO_SCENARIOS[CURRENT_DEMO_SCENARIO];
+
+// Part 3 상세 채점 결과 (시나리오별)
+const DEMO_PART3_DETAILED_BY_SCENARIO: Record<DemoScenario, Array<{
+  taskId: string;
+  taskTitle: string;
+  taskDescription: string;
+  score: number;
+  maxScore: number;
+  gradingTime: string;
+  criteria: Array<{ name: string; score: number; maxScore: number; comment: string }>;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+}>> = {
+  pass_high: [
+    {
+      taskId: 'hr-task-1',
+      taskTitle: '채용 공고 작성',
+      taskDescription: 'AI를 활용하여 신입 개발자 채용 공고를 작성하세요.',
+      score: 19,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:23:45',
+      criteria: [
+        { name: '프롬프트 구조', score: 5, maxScore: 5, comment: '역할-맥락-지시-제약-출력 구조를 완벽하게 활용함' },
+        { name: '직무 요구사항 반영', score: 5, maxScore: 5, comment: '모든 요구사항을 상세하고 정확하게 반영함' },
+        { name: '개인정보 보호', score: 5, maxScore: 5, comment: '민감 정보 없이 완벽하게 작성됨' },
+        { name: '결과물 품질', score: 4, maxScore: 5, comment: '매우 전문적이고 매력적인 공고, 거의 완벽함' },
+      ],
+      feedback: '탁월한 프롬프트 설계 능력을 보여주셨습니다. 채용 공고가 전문적이면서도 회사의 매력을 효과적으로 전달하고 있습니다. AI 도구 활용에 대한 깊은 이해가 돋보입니다.',
+      strengths: ['완벽한 프롬프트 구조', '상세한 직무 요건 기술', '브랜딩 요소 효과적 반영', '법적 요건 준수'],
+      improvements: ['일부 표현의 간결화 검토'],
+    },
+    {
+      taskId: 'hr-task-2',
+      taskTitle: '면접 질문 생성',
+      taskDescription: 'AI를 활용하여 역량 기반 면접 질문을 생성하세요.',
+      score: 18,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:25:12',
+      criteria: [
+        { name: '프롬프트 구조', score: 5, maxScore: 5, comment: '체계적인 구조와 명확한 제약 조건 설정' },
+        { name: '역량 연계성', score: 5, maxScore: 5, comment: '핵심 역량과 질문이 완벽하게 연결됨' },
+        { name: '편향 검토', score: 4, maxScore: 5, comment: '대부분 중립적, 세심한 검토가 돋보임' },
+        { name: '실용성', score: 4, maxScore: 5, comment: '즉시 활용 가능한 고품질 질문' },
+      ],
+      feedback: '역량 기반 면접 질문이 매우 체계적으로 생성되었습니다. 다양한 역량을 평가할 수 있는 균형 잡힌 질문 세트가 인상적입니다.',
+      strengths: ['역량별 질문 분류 완벽', '행동 기반 질문 형식 마스터', '평가 기준 명확한 연계', '후속 질문 시나리오 포함'],
+      improvements: ['일부 질문의 난이도 조절 검토'],
+    },
+    {
+      taskId: 'hr-task-3',
+      taskTitle: '지원자 서류 분석',
+      taskDescription: 'AI를 활용하여 지원자 이력서를 분석하고 평가하세요.',
+      score: 17,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:27:33',
+      criteria: [
+        { name: '프롬프트 구조', score: 5, maxScore: 5, comment: '분석 기준이 명확하고 체계적임' },
+        { name: '개인정보 처리', score: 4, maxScore: 5, comment: '개인정보 마스킹 잘 수행됨' },
+        { name: '분석 품질', score: 4, maxScore: 5, comment: '심층적이고 체계적인 역량 분석' },
+        { name: '결과 검증', score: 4, maxScore: 5, comment: 'AI 결과에 대한 검증 절차 포함' },
+      ],
+      feedback: 'AI를 활용한 이력서 분석이 매우 우수합니다. 개인정보 보호와 결과 검증에 대한 의식이 높아, 실무에서 안전하게 AI를 활용할 수 있는 역량을 갖추고 있습니다.',
+      strengths: ['분석 기준의 체계적 설정', '개인정보 보호 철저', '역량 매칭 분석 탁월', '검증 절차 포함'],
+      improvements: ['분석 결과의 시각화 방안 검토'],
+    },
+  ],
+  pass_normal: [
+    {
+      taskId: 'hr-task-1',
+      taskTitle: '채용 공고 작성',
+      taskDescription: 'AI를 활용하여 신입 개발자 채용 공고를 작성하세요.',
+      score: 16,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:23:45',
+      criteria: [
+        { name: '프롬프트 구조', score: 4, maxScore: 5, comment: '역할-맥락-지시-제약-출력 구조를 잘 사용함' },
+        { name: '직무 요구사항 반영', score: 4, maxScore: 5, comment: '대부분의 요구사항을 잘 반영함' },
+        { name: '개인정보 보호', score: 4, maxScore: 5, comment: '민감 정보 없이 작성됨' },
+        { name: '결과물 품질', score: 4, maxScore: 5, comment: '전문적인 공고 생성' },
+      ],
+      feedback: '프롬프트 설계가 양호하며, AI 도구를 효과적으로 활용했습니다. 우대사항을 더 구체화하면 더 좋은 결과를 얻을 수 있습니다.',
+      strengths: ['기본적인 프롬프트 구조 활용', '직무 요건 기술', '회사 문화 반영'],
+      improvements: ['우대사항 구체화', '차별화 요소 강화'],
+    },
+    {
+      taskId: 'hr-task-2',
+      taskTitle: '면접 질문 생성',
+      taskDescription: 'AI를 활용하여 역량 기반 면접 질문을 생성하세요.',
+      score: 15,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:25:12',
+      criteria: [
+        { name: '프롬프트 구조', score: 4, maxScore: 5, comment: '기본 구조는 갖췄으나 제약 조건 보완 필요' },
+        { name: '역량 연계성', score: 4, maxScore: 5, comment: '핵심 역량과 질문이 연결됨' },
+        { name: '편향 검토', score: 3, maxScore: 5, comment: '일부 질문 재검토 필요' },
+        { name: '실용성', score: 4, maxScore: 5, comment: '실제 면접에 활용 가능' },
+      ],
+      feedback: '역량 기반 면접 질문이 생성되었습니다. 편향 가능성이 있는 질문을 검토하고, 후속 질문도 준비하면 더욱 효과적입니다.',
+      strengths: ['역량별 질문 분류', '행동 기반 질문 형식 활용'],
+      improvements: ['편향 검토 강화', '후속 질문 시나리오 추가'],
+    },
+    {
+      taskId: 'hr-task-3',
+      taskTitle: '지원자 서류 분석',
+      taskDescription: 'AI를 활용하여 지원자 이력서를 분석하고 평가하세요.',
+      score: 13,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:27:33',
+      criteria: [
+        { name: '프롬프트 구조', score: 4, maxScore: 5, comment: '분석 기준 명시가 되어 있음' },
+        { name: '개인정보 처리', score: 3, maxScore: 5, comment: '일부 개인정보 마스킹 누락' },
+        { name: '분석 품질', score: 3, maxScore: 5, comment: '기본적인 역량 분석 수행' },
+        { name: '결과 검증', score: 3, maxScore: 5, comment: 'AI 분석 결과 검증 부족' },
+      ],
+      feedback: 'AI를 활용한 분석 능력은 양호하나, 개인정보 보호와 결과 검증에서 개선이 필요합니다.',
+      strengths: ['분석 기준 설정', '역량 매칭 시도'],
+      improvements: ['개인정보 마스킹 철저히', 'AI 결과 검증 절차 추가'],
+    },
+  ],
+  fail_close: [
+    {
+      taskId: 'hr-task-1',
+      taskTitle: '채용 공고 작성',
+      taskDescription: 'AI를 활용하여 신입 개발자 채용 공고를 작성하세요.',
+      score: 12,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:23:45',
+      criteria: [
+        { name: '프롬프트 구조', score: 3, maxScore: 5, comment: '기본 구조는 있으나 불완전함' },
+        { name: '직무 요구사항 반영', score: 3, maxScore: 5, comment: '일부 요구사항 누락' },
+        { name: '개인정보 보호', score: 3, maxScore: 5, comment: '보완이 필요한 부분 있음' },
+        { name: '결과물 품질', score: 3, maxScore: 5, comment: '기본적인 수준의 공고' },
+      ],
+      feedback: '프롬프트 설계의 기본은 갖추었으나, 구조화와 상세화가 부족합니다. 역할-맥락-지시-제약-출력 순서를 더 명확히 하고, 각 요소를 상세히 기술하면 더 좋은 결과를 얻을 수 있습니다.',
+      strengths: ['기본적인 프롬프트 작성 시도', 'AI 도구 활용 의지'],
+      improvements: ['프롬프트 구조화 학습 필요', '요구사항 상세화', '결과물 검토 강화'],
+    },
+    {
+      taskId: 'hr-task-2',
+      taskTitle: '면접 질문 생성',
+      taskDescription: 'AI를 활용하여 역량 기반 면접 질문을 생성하세요.',
+      score: 11,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:25:12',
+      criteria: [
+        { name: '프롬프트 구조', score: 3, maxScore: 5, comment: '구조 개선 필요' },
+        { name: '역량 연계성', score: 3, maxScore: 5, comment: '역량과 질문 연결 부족' },
+        { name: '편향 검토', score: 2, maxScore: 5, comment: '편향 검토 미흡' },
+        { name: '실용성', score: 3, maxScore: 5, comment: '일부 수정 후 활용 가능' },
+      ],
+      feedback: '면접 질문이 생성되었으나, 역량과의 연계성이 약하고 편향 검토가 부족합니다. 각 역량별로 필요한 질문을 명확히 정의하고, 생성된 질문의 중립성을 검토하세요.',
+      strengths: ['면접 질문 생성 시도', '기본적인 질문 형태 이해'],
+      improvements: ['역량-질문 연계 강화', '편향 검토 절차 수립', '행동 기반 질문 형식 학습'],
+    },
+    {
+      taskId: 'hr-task-3',
+      taskTitle: '지원자 서류 분석',
+      taskDescription: 'AI를 활용하여 지원자 이력서를 분석하고 평가하세요.',
+      score: 10,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:27:33',
+      criteria: [
+        { name: '프롬프트 구조', score: 3, maxScore: 5, comment: '분석 기준이 모호함' },
+        { name: '개인정보 처리', score: 2, maxScore: 5, comment: '개인정보 마스킹 미흡' },
+        { name: '분석 품질', score: 3, maxScore: 5, comment: '분석 깊이 부족' },
+        { name: '결과 검증', score: 2, maxScore: 5, comment: '검증 절차 부재' },
+      ],
+      feedback: '이력서 분석을 시도했으나, 개인정보 보호와 결과 검증에서 심각한 개선이 필요합니다. AI에 데이터를 입력하기 전 반드시 개인정보를 마스킹하고, AI의 판단을 맹신하지 마세요.',
+      strengths: ['AI 활용 분석 시도'],
+      improvements: ['개인정보 보호 교육 필수', '분석 기준 명확화', 'AI 결과 검증 습관화', '편향 인식 제고'],
+    },
+  ],
+  fail_low: [
+    {
+      taskId: 'hr-task-1',
+      taskTitle: '채용 공고 작성',
+      taskDescription: 'AI를 활용하여 신입 개발자 채용 공고를 작성하세요.',
+      score: 8,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:23:45',
+      criteria: [
+        { name: '프롬프트 구조', score: 2, maxScore: 5, comment: '프롬프트 구조가 부재함' },
+        { name: '직무 요구사항 반영', score: 2, maxScore: 5, comment: '요구사항 파악 부족' },
+        { name: '개인정보 보호', score: 2, maxScore: 5, comment: '보안 의식 부족' },
+        { name: '결과물 품질', score: 2, maxScore: 5, comment: '품질 미달' },
+      ],
+      feedback: '프롬프트 설계의 기본 원리에 대한 학습이 필요합니다. AI에게 명확한 역할, 맥락, 지시를 제공하지 않으면 원하는 결과를 얻기 어렵습니다. 기초부터 차근차근 학습하시기 바랍니다.',
+      strengths: ['AI 도구 사용 시도'],
+      improvements: ['프롬프트 기초 학습 필수', '구조화된 지시 작성 연습', 'AI 활용 사례 학습', '결과물 품질 기준 이해'],
+    },
+    {
+      taskId: 'hr-task-2',
+      taskTitle: '면접 질문 생성',
+      taskDescription: 'AI를 활용하여 역량 기반 면접 질문을 생성하세요.',
+      score: 7,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:25:12',
+      criteria: [
+        { name: '프롬프트 구조', score: 2, maxScore: 5, comment: '구조화 미흡' },
+        { name: '역량 연계성', score: 2, maxScore: 5, comment: '역량 이해 부족' },
+        { name: '편향 검토', score: 1, maxScore: 5, comment: '편향 인식 부재' },
+        { name: '실용성', score: 2, maxScore: 5, comment: '실무 활용 어려움' },
+      ],
+      feedback: '역량 기반 면접의 개념과 AI 프롬프트 작성법에 대한 기초 학습이 필요합니다. 면접에서 평가하고자 하는 역량을 먼저 정의하고, 이를 AI에게 명확히 전달하는 연습을 하세요.',
+      strengths: ['학습 의지'],
+      improvements: ['역량 기반 면접 이론 학습', '프롬프트 작성 기초 교육', 'AI 편향 인식 교육', '실무 사례 분석'],
+    },
+    {
+      taskId: 'hr-task-3',
+      taskTitle: '지원자 서류 분석',
+      taskDescription: 'AI를 활용하여 지원자 이력서를 분석하고 평가하세요.',
+      score: 6,
+      maxScore: 20,
+      gradingTime: '2026-01-15 14:27:33',
+      criteria: [
+        { name: '프롬프트 구조', score: 2, maxScore: 5, comment: '분석 프롬프트 미흡' },
+        { name: '개인정보 처리', score: 1, maxScore: 5, comment: '심각한 개인정보 보호 위반' },
+        { name: '분석 품질', score: 2, maxScore: 5, comment: '분석 방법론 부재' },
+        { name: '결과 검증', score: 1, maxScore: 5, comment: '검증 개념 부재' },
+      ],
+      feedback: '⚠️ 개인정보 보호에 대한 심각한 인식 부족이 확인되었습니다. AI에 개인정보를 무분별하게 입력하면 법적 문제가 발생할 수 있습니다. 개인정보 보호 교육을 반드시 이수하시기 바랍니다.',
+      strengths: [],
+      improvements: ['개인정보 보호 교육 즉시 이수', 'AI 윤리 교육 필수', '데이터 마스킹 실습', 'AI 결과 검증 원칙 학습'],
+    },
   ],
 };
 
-// Part 3 상세 채점 결과 (데모용)
-const DEMO_PART3_DETAILED = [
-  {
-    taskId: 'hr-task-1',
-    taskTitle: '채용 공고 작성',
-    taskDescription: 'AI를 활용하여 신입 개발자 채용 공고를 작성하세요.',
-    score: 18,
-    maxScore: 20,
-    gradingTime: '2026-01-15 14:23:45',
-    criteria: [
-      { name: '프롬프트 구조', score: 5, maxScore: 5, comment: '역할-맥락-지시-제약-출력 구조를 명확하게 사용함' },
-      { name: '직무 요구사항 반영', score: 4, maxScore: 5, comment: '대부분의 요구사항을 잘 반영했으나, 우대사항 구체화 필요' },
-      { name: '개인정보 보호', score: 5, maxScore: 5, comment: '민감 정보 없이 적절하게 작성됨' },
-      { name: '결과물 품질', score: 4, maxScore: 5, comment: '전문적이고 매력적인 공고 생성, 일부 표현 다듬기 필요' },
-    ],
-    feedback: '프롬프트 설계가 체계적이며, AI 도구를 효과적으로 활용했습니다. 채용 공고의 전문성이 높고, 회사 문화와 직무 내용이 잘 드러납니다. 우대사항을 더 구체화하면 더 좋은 지원자를 유치할 수 있을 것입니다.',
-    strengths: ['명확한 프롬프트 구조 사용', '직무 요건 상세 기술', '회사 문화 적절히 반영'],
-    improvements: ['우대사항 구체화 필요', '연봉 범위 표기 검토'],
-  },
-  {
-    taskId: 'hr-task-2',
-    taskTitle: '면접 질문 생성',
-    taskDescription: 'AI를 활용하여 역량 기반 면접 질문을 생성하세요.',
-    score: 16,
-    maxScore: 20,
-    gradingTime: '2026-01-15 14:25:12',
-    criteria: [
-      { name: '프롬프트 구조', score: 4, maxScore: 5, comment: '기본 구조는 갖췄으나 제약 조건이 부족함' },
-      { name: '역량 연계성', score: 4, maxScore: 5, comment: '핵심 역량과 질문이 잘 연결됨' },
-      { name: '편향 검토', score: 4, maxScore: 5, comment: '대부분 중립적이나 일부 질문 재검토 필요' },
-      { name: '실용성', score: 4, maxScore: 5, comment: '실제 면접에 바로 활용 가능한 수준' },
-    ],
-    feedback: '역량 기반 면접 질문이 체계적으로 생성되었습니다. 다만, AI가 생성한 질문 중 일부는 무의식적 편향을 유발할 수 있으므로, 최종 사용 전 반드시 검토가 필요합니다. 후속 질문 시나리오도 함께 준비하면 더욱 효과적입니다.',
-    strengths: ['역량별 질문 분류 명확', '행동 기반 질문 형식 활용', '평가 기준 연계'],
-    improvements: ['편향 가능성 있는 질문 재검토', '후속 질문 시나리오 보완'],
-  },
-  {
-    taskId: 'hr-task-3',
-    taskTitle: '지원자 서류 분석',
-    taskDescription: 'AI를 활용하여 지원자 이력서를 분석하고 평가하세요.',
-    score: 14,
-    maxScore: 20,
-    gradingTime: '2026-01-15 14:27:33',
-    criteria: [
-      { name: '프롬프트 구조', score: 4, maxScore: 5, comment: '분석 기준 명시가 잘 되어 있음' },
-      { name: '개인정보 처리', score: 3, maxScore: 5, comment: '일부 개인정보 마스킹 누락됨' },
-      { name: '분석 품질', score: 4, maxScore: 5, comment: '핵심 역량 분석이 체계적임' },
-      { name: '결과 검증', score: 3, maxScore: 5, comment: 'AI 분석 결과에 대한 교차 검증 부족' },
-    ],
-    feedback: 'AI를 활용한 이력서 분석 능력은 양호하나, 개인정보 보호 측면에서 개선이 필요합니다. 지원자의 연락처, 주소 등 민감 정보는 반드시 마스킹 후 AI에 입력해야 합니다. 또한 AI의 평가 결과를 그대로 수용하지 말고, 인간의 판단으로 최종 검증하는 절차를 추가하세요.',
-    strengths: ['분석 기준의 체계적 설정', '역량 매칭 분석 우수', '정량적 평가 시도'],
-    improvements: ['개인정보 마스킹 철저히', 'AI 판단에 대한 검증 절차 추가', '편향 방지 장치 마련'],
-  },
-];
+const DEMO_PART3_DETAILED = DEMO_PART3_DETAILED_BY_SCENARIO[CURRENT_DEMO_SCENARIO];
 
-// 루브릭 기반 피드백 데이터
-const RUBRIC_FEEDBACK: Record<string, { level: 'excellent' | 'good' | 'needs_improvement'; description: string; rubric: string[] }> = {
-  defining: {
-    level: 'excellent',
-    description: 'AI 개념과 용어를 정확하게 이해하고 있습니다.',
-    rubric: [
-      '✓ LLM, 토큰, 환각 등 핵심 용어 이해',
-      '✓ AI 모델의 작동 원리 파악',
-      '✓ AI 기술의 한계와 가능성 인식',
-    ],
+// 루브릭 기반 피드백 데이터 (시나리오별)
+const RUBRIC_FEEDBACK_BY_SCENARIO: Record<DemoScenario, Record<string, { level: 'excellent' | 'good' | 'needs_improvement'; description: string; rubric: string[] }>> = {
+  pass_high: {
+    defining: { level: 'excellent', description: 'AI 개념과 용어를 완벽하게 이해하고 있습니다.', rubric: ['✓ LLM, 토큰, 환각 등 핵심 용어 완벽 이해', '✓ AI 모델의 작동 원리 심층 파악', '✓ AI 기술의 한계와 가능성 정확히 인식'] },
+    prompting: { level: 'excellent', description: '프롬프트 설계 능력이 매우 우수합니다.', rubric: ['✓ 역할-맥락-지시-제약-출력 완벽 구사', '✓ 상황별 최적화된 프롬프트 설계', '✓ 반복적 개선 능력'] },
+    protecting: { level: 'excellent', description: '개인정보 보호 및 보안 의식이 탁월합니다.', rubric: ['✓ 민감 정보 완벽 마스킹', '✓ 데이터 유출 위험 선제적 대응', '✓ 보안 가이드라인 철저 준수'] },
+    refining: { level: 'good', description: 'AI 출력 검증 역량이 우수합니다.', rubric: ['✓ 사실 확인 절차 수립', '✓ 교차 검증 실시', '△ 출처 확인 자동화 검토'] },
+    acumen: { level: 'excellent', description: '윤리적 판단력이 탁월합니다.', rubric: ['✓ 저작권 완벽 인식', '✓ AI 편향 적극적 대응', '✓ 책임 소재 명확히 판단'] },
+    integrating: { level: 'excellent', description: '업무 통합 능력이 탁월합니다.', rubric: ['✓ AI 도구 최적 활용', '✓ 워크플로우 효율화 달성', '✓ 협업 도구 완벽 연계'] },
   },
-  prompting: {
-    level: 'good',
-    description: '프롬프트 설계 능력이 양호하나 일부 개선이 필요합니다.',
-    rubric: [
-      '✓ 역할-맥락-지시 구조 사용',
-      '△ 제약 조건 명시 부족',
-      '✓ 출력 형식 지정 능력',
-    ],
+  pass_normal: {
+    defining: { level: 'excellent', description: 'AI 개념과 용어를 정확하게 이해하고 있습니다.', rubric: ['✓ LLM, 토큰, 환각 등 핵심 용어 이해', '✓ AI 모델의 작동 원리 파악', '✓ AI 기술의 한계와 가능성 인식'] },
+    prompting: { level: 'good', description: '프롬프트 설계 능력이 양호하나 일부 개선이 필요합니다.', rubric: ['✓ 역할-맥락-지시 구조 사용', '△ 제약 조건 명시 부족', '✓ 출력 형식 지정 능력'] },
+    protecting: { level: 'excellent', description: '개인정보 보호 및 보안 의식이 우수합니다.', rubric: ['✓ 민감 정보 마스킹 실천', '✓ 데이터 유출 위험 인식', '✓ 보안 가이드라인 준수'] },
+    refining: { level: 'needs_improvement', description: 'AI 출력 검증 역량 강화가 필요합니다.', rubric: ['△ 사실 확인 절차 미흡', '✗ 교차 검증 부족', '△ 출처 확인 습관화 필요'] },
+    acumen: { level: 'good', description: '윤리적 판단력이 양호합니다.', rubric: ['✓ 저작권 인식', '✓ AI 편향 가능성 이해', '△ 책임 소재 판단 개선 필요'] },
+    integrating: { level: 'good', description: '업무 통합 능력이 양호합니다.', rubric: ['✓ AI 도구 활용 시나리오 이해', '△ 워크플로우 최적화 여지 있음', '✓ 협업 도구와의 연계 가능'] },
   },
-  protecting: {
-    level: 'excellent',
-    description: '개인정보 보호 및 보안 의식이 우수합니다.',
-    rubric: [
-      '✓ 민감 정보 마스킹 실천',
-      '✓ 데이터 유출 위험 인식',
-      '✓ 보안 가이드라인 준수',
-    ],
+  fail_close: {
+    defining: { level: 'good', description: 'AI 기본 개념은 이해하고 있으나 심화 학습이 필요합니다.', rubric: ['✓ 기본 AI 용어 이해', '△ 작동 원리 이해 부족', '△ 기술 한계 인식 미흡'] },
+    prompting: { level: 'needs_improvement', description: '프롬프트 설계 능력 향상이 필요합니다.', rubric: ['△ 기본 구조만 사용', '✗ 제약 조건 미흡', '△ 출력 형식 지정 부족'] },
+    protecting: { level: 'good', description: '개인정보 보호 의식은 있으나 실천이 부족합니다.', rubric: ['△ 마스킹 일부 누락', '✓ 위험 인식은 있음', '△ 가이드라인 준수 불완전'] },
+    refining: { level: 'needs_improvement', description: 'AI 출력 검증 역량이 크게 부족합니다.', rubric: ['✗ 사실 확인 미실시', '✗ 교차 검증 부재', '✗ 출처 확인 안함'] },
+    acumen: { level: 'needs_improvement', description: '윤리적 판단력 향상이 필요합니다.', rubric: ['△ 저작권 인식 부족', '✗ AI 편향 미인식', '✗ 책임 소재 불명확'] },
+    integrating: { level: 'good', description: '업무 통합 시도는 있으나 개선이 필요합니다.', rubric: ['△ AI 도구 기본 활용', '✗ 워크플로우 비효율', '△ 연계 미흡'] },
   },
-  refining: {
-    level: 'needs_improvement',
-    description: 'AI 출력 검증 역량 강화가 필요합니다.',
-    rubric: [
-      '△ 사실 확인 절차 미흡',
-      '✗ 교차 검증 부족',
-      '△ 출처 확인 습관화 필요',
-    ],
-  },
-  acumen: {
-    level: 'good',
-    description: '윤리적 판단력이 양호합니다.',
-    rubric: [
-      '✓ 저작권 인식',
-      '✓ AI 편향 가능성 이해',
-      '△ 책임 소재 판단 개선 필요',
-    ],
-  },
-  integrating: {
-    level: 'good',
-    description: '업무 통합 능력이 양호합니다.',
-    rubric: [
-      '✓ AI 도구 활용 시나리오 이해',
-      '△ 워크플로우 최적화 여지 있음',
-      '✓ 협업 도구와의 연계 가능',
-    ],
+  fail_low: {
+    defining: { level: 'needs_improvement', description: 'AI 기본 개념 학습이 시급합니다.', rubric: ['✗ 핵심 용어 이해 부족', '✗ 작동 원리 미파악', '✗ 기술 한계 미인식'] },
+    prompting: { level: 'needs_improvement', description: '프롬프트 설계 기초 교육이 필요합니다.', rubric: ['✗ 구조화 미흡', '✗ 제약 조건 부재', '✗ 출력 형식 미지정'] },
+    protecting: { level: 'needs_improvement', description: '⚠️ 개인정보 보호 교육이 시급합니다.', rubric: ['✗ 마스킹 미실시', '✗ 위험 인식 부재', '✗ 가이드라인 무시'] },
+    refining: { level: 'needs_improvement', description: 'AI 출력 검증 개념 학습이 필요합니다.', rubric: ['✗ 검증 개념 부재', '✗ 사실 확인 안함', '✗ AI 결과 맹신'] },
+    acumen: { level: 'needs_improvement', description: '⚠️ AI 윤리 교육이 시급합니다.', rubric: ['✗ 저작권 무시', '✗ 편향 미인식', '✗ 책임 의식 부재'] },
+    integrating: { level: 'needs_improvement', description: 'AI 업무 활용 기초 학습이 필요합니다.', rubric: ['✗ AI 도구 이해 부족', '✗ 워크플로우 미적용', '✗ 연계 개념 부재'] },
   },
 };
+
+const RUBRIC_FEEDBACK = RUBRIC_FEEDBACK_BY_SCENARIO[CURRENT_DEMO_SCENARIO];
 
 // 직무별 피드백 데이터 (상세 버전)
 const JOB_FEEDBACK: Record<string, {
@@ -385,8 +585,8 @@ export const Results = () => {
 
   const part3Scores = useMemo(() => {
     if (DEMO_MODE) {
-      // 데모용 Part 3 점수 (합격 수준)
-      return { defining: 10, prompting: 12, protecting: 10, refining: 8, acumen: 10, integrating: 10 };
+      // 데모 시나리오별 Part 3 점수
+      return DEMO_SCORES.part3Scores;
     }
     if (part3Results.length > 0) {
       return calculatePart3Scores(part3Results);
@@ -579,6 +779,49 @@ export const Results = () => {
       )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {/* Demo Scenario Selector */}
+        {DEMO_MODE && (
+          <div className="mb-8 p-4 rounded-lg" style={{ backgroundColor: '#F0F9FF', border: '1px solid #0EA5E9' }}>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded font-bold" style={{ backgroundColor: '#0EA5E9', color: 'white' }}>DEMO</span>
+                <span className="text-sm font-medium" style={{ color: '#0369A1' }}>
+                  데모 시나리오: {DEMO_SCENARIOS[CURRENT_DEMO_SCENARIO].description}
+                </span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {(Object.keys(DEMO_SCENARIOS) as DemoScenario[]).map((scenario) => (
+                  <button
+                    key={scenario}
+                    onClick={() => {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('demo', scenario);
+                      window.location.href = url.toString();
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                      CURRENT_DEMO_SCENARIO === scenario ? 'text-white' : 'hover:opacity-80'
+                    }`}
+                    style={{
+                      backgroundColor: CURRENT_DEMO_SCENARIO === scenario
+                        ? (scenario.startsWith('pass') ? COLORS.success : COLORS.error)
+                        : 'white',
+                      color: CURRENT_DEMO_SCENARIO === scenario
+                        ? 'white'
+                        : (scenario.startsWith('pass') ? COLORS.success : COLORS.error),
+                      border: `1px solid ${scenario.startsWith('pass') ? COLORS.success : COLORS.error}`,
+                    }}
+                  >
+                    {scenario === 'pass_high' && '고득점 합격'}
+                    {scenario === 'pass_normal' && '일반 합격'}
+                    {scenario === 'fail_close' && '아쉬운 불합격'}
+                    {scenario === 'fail_low' && '낮은 점수'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Grading Status Banner */}
         {part3Results.length === 0 && part3Tasks.length > 0 && (
           <div className="mb-8 p-4 rounded-lg flex items-center justify-between" style={{ backgroundColor: COLORS.goldMuted, border: `1px solid ${COLORS.gold}` }}>
@@ -1101,13 +1344,108 @@ export const Results = () => {
           </div>
         )}
 
-        {passed && (
+        {passed ? (
           <div className="mt-8 p-6 rounded-lg border" style={{ backgroundColor: '#ECFDF5', borderColor: COLORS.success }}>
             <div className="flex items-start gap-4">
               <CheckCircle2 className="w-6 h-6" style={{ color: COLORS.success }} />
               <div>
                 <p className="font-bold mb-1" style={{ color: COLORS.navy }}>인증을 축하합니다!</p>
                 <p className="text-sm" style={{ color: COLORS.textMuted }}>AI 도구를 안전하고 효과적으로 사용할 수 있는 역량이 검증되었습니다.</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8 space-y-4">
+            {/* 불합격 안내 */}
+            <div className="p-6 rounded-lg border" style={{ backgroundColor: '#FEF2F2', borderColor: COLORS.error }}>
+              <div className="flex items-start gap-4">
+                <AlertCircle className="w-6 h-6 flex-shrink-0" style={{ color: COLORS.error }} />
+                <div>
+                  <p className="font-bold mb-1" style={{ color: COLORS.navy }}>
+                    {totalPoints >= 65 ? '아쉽게 불합격입니다' : '기초 역량 강화가 필요합니다'}
+                  </p>
+                  <p className="text-sm mb-3" style={{ color: COLORS.textMuted }}>
+                    {totalPoints >= 65
+                      ? `합격까지 ${70 - totalPoints}점이 부족합니다. 위의 피드백을 참고하여 부족한 영역을 보완하면 충분히 합격할 수 있습니다.`
+                      : 'AI 역량의 기초부터 차근차근 학습이 필요합니다. 교재를 통해 기본 개념을 익히고 다시 도전해 주세요.'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: COLORS.error, color: 'white' }}>
+                      현재 점수: {totalPoints}점
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: COLORS.navy, color: 'white' }}>
+                      합격 기준: 70점 이상
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 재응시 안내 */}
+            <div className="p-6 rounded-lg border" style={{ backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold }}>
+              <div className="flex items-start gap-4">
+                <BookOpen className="w-6 h-6 flex-shrink-0" style={{ color: COLORS.gold }} />
+                <div className="flex-1">
+                  <p className="font-bold mb-3" style={{ color: COLORS.navy }}>재응시 안내</p>
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div className="p-3 rounded-lg bg-white">
+                      <p className="text-xs font-bold mb-1" style={{ color: COLORS.navy }}>재응시 가능 시점</p>
+                      <p className="text-sm" style={{ color: COLORS.textMuted }}>불합격일로부터 7일 후</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-white">
+                      <p className="text-xs font-bold mb-1" style={{ color: COLORS.navy }}>추천 학습 기간</p>
+                      <p className="text-sm" style={{ color: COLORS.textMuted }}>
+                        {totalPoints >= 65 ? '1~2주' : '3~4주'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-sm font-bold mb-2" style={{ color: COLORS.navy }}>집중 학습 추천 영역</p>
+                  <div className="flex flex-wrap gap-2">
+                    {improvements.slice(0, 3).map((item, idx) => (
+                      <span key={idx} className="text-xs px-3 py-1 rounded-full bg-white" style={{ color: COLORS.navy, border: `1px solid ${COLORS.border}` }}>
+                        {item.title}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 학습 자료 링크 */}
+            <div className="p-6 rounded-lg border" style={{ backgroundColor: 'white', borderColor: COLORS.border }}>
+              <p className="font-bold mb-4" style={{ color: COLORS.navy }}>추천 학습 자료</p>
+              <div className="space-y-3">
+                <a
+                  href="https://zakedu.github.io/genai-book/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  style={{ border: `1px solid ${COLORS.border}` }}
+                >
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="w-5 h-5" style={{ color: COLORS.navy }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: COLORS.navy }}>AICT 공식 교재</p>
+                      <p className="text-xs" style={{ color: COLORS.textMuted }}>AI 역량 기초부터 실무까지</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4" style={{ color: COLORS.textMuted }} />
+                </a>
+                <button
+                  onClick={() => navigate('/practice')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  style={{ border: `1px solid ${COLORS.border}` }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Target className="w-5 h-5" style={{ color: COLORS.navy }} />
+                    <div className="text-left">
+                      <p className="text-sm font-medium" style={{ color: COLORS.navy }}>연습 모드</p>
+                      <p className="text-xs" style={{ color: COLORS.textMuted }}>시험과 동일한 형식으로 연습</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4" style={{ color: COLORS.textMuted }} />
+                </button>
               </div>
             </div>
           </div>
