@@ -1,23 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Clock } from 'lucide-react';
 
 interface TimerProps {
   startTime: number;
   duration: number; // in minutes
+  onExpire?: () => void;
 }
 
-export const Timer = ({ startTime, duration }: TimerProps) => {
+export const Timer = ({ startTime, duration, onExpire }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const hasExpired = useRef(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = (duration * 60) - elapsed;
       setTimeLeft(Math.max(0, remaining));
+
+      // 타이머 만료 시 콜백 호출 (한 번만)
+      if (remaining <= 0 && !hasExpired.current && onExpire) {
+        hasExpired.current = true;
+        onExpire();
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime, duration]);
+  }, [startTime, duration, onExpire]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;

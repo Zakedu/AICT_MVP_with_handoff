@@ -1,7 +1,10 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Timer } from './Timer';
-import { Flag, ChevronLeft, ChevronRight, Menu, X, Check } from 'lucide-react';
+import { Flag, ChevronLeft, ChevronRight, Menu, X, Check, AlertTriangle } from 'lucide-react';
 import { EssentialBadge } from './EssentialBadge';
+import { useExam } from '../context/ExamContext';
+import { useTabLeaveDetection } from '../hooks/useTabLeaveDetection';
 
 // 색상 상수
 const COLORS = {
@@ -41,6 +44,9 @@ interface ExamShellProps {
   disableNext?: boolean;
   nextLabel?: string;
   showSubmit?: boolean;
+  onTimeExpired?: () => void;
+  enableTabLeaveDetection?: boolean;
+  autoSubmitPath?: string;
 }
 
 export const ExamShell = ({
@@ -64,8 +70,43 @@ export const ExamShell = ({
   disableNext = false,
   nextLabel = 'Next',
   showSubmit = false,
+  onTimeExpired,
+  enableTabLeaveDetection = true,
+  autoSubmitPath,
 }: ExamShellProps) => {
+  const navigate = useNavigate();
+  const { isRecording } = useExam();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showTabLeaveWarning, setShowTabLeaveWarning] = useState(false);
+  const [lastLeaveDuration, setLastLeaveDuration] = useState(0);
+
+  // 탭 이탈 감지
+  const { tabLeaveCount, isOverLimit } = useTabLeaveDetection({
+    enabled: enableTabLeaveDetection,
+    onTabLeave: () => {
+      // 탭을 벗어날 때
+    },
+    onTabReturn: (leaveDuration) => {
+      setLastLeaveDuration(Math.round(leaveDuration));
+      setShowTabLeaveWarning(true);
+      setTimeout(() => setShowTabLeaveWarning(false), 5000);
+    },
+    onLimitExceeded: () => {
+      // 탭 이탈 제한 초과 시 자동 제출
+      if (autoSubmitPath) {
+        navigate(autoSubmitPath);
+      }
+    },
+  });
+
+  // 타이머 만료 시 자동 제출
+  const handleTimeExpired = useCallback(() => {
+    if (onTimeExpired) {
+      onTimeExpired();
+    } else if (autoSubmitPath) {
+      navigate(autoSubmitPath);
+    }
+  }, [onTimeExpired, autoSubmitPath, navigate]);
 
   const currentQuestion = questions[currentIndex];
   const isCurrentFlagged = currentQuestion ? isFlagged(currentQuestion.id) : false;
@@ -123,6 +164,32 @@ export const ExamShell = ({
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: COLORS.surface }}>
+      {/* 탭 이탈 경고 토스트 */}
+      {showTabLeaveWarning && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div
+            className="flex items-center gap-3 px-5 py-4 rounded-lg shadow-lg border"
+            style={{
+              backgroundColor: isOverLimit ? '#FEE2E2' : '#FEF3C7',
+              borderColor: isOverLimit ? '#FCA5A5' : '#FCD34D',
+            }}
+          >
+            <AlertTriangle className="w-5 h-5" style={{ color: isOverLimit ? '#DC2626' : '#D97706' }} />
+            <div>
+              <p className="font-medium" style={{ color: isOverLimit ? '#DC2626' : '#92400E' }}>
+                {isOverLimit
+                  ? '탭 이탈 횟수 초과! 시험이 자동 제출됩니다.'
+                  : `탭 이탈 감지됨 (${lastLeaveDuration}초)`}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: isOverLimit ? '#B91C1C' : '#A16207' }}>
+                {isOverLimit
+                  ? '부정행위로 기록됩니다.'
+                  : `남은 기회: ${3 - tabLeaveCount}회`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Top Fixed Bar */}
       <div className="bg-white sticky top-0 z-30" style={{ borderBottom: `1px solid ${COLORS.border}` }}>
         <div className="flex items-center justify-between px-4 lg:px-6 py-4">
@@ -157,8 +224,28 @@ export const ExamShell = ({
 
           {/* Right */}
           <div className="flex items-center gap-4">
+            {/* 녹화 인디케이터 */}
+            {isRecording && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium" style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#DC2626' }}></div>
+                <span>REC</span>
+              </div>
+            )}
+            {/* 탭 이탈 카운터 */}
+            {enableTabLeaveDetection && tabLeaveCount > 0 && (
+              <div
+                className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium"
+                style={{
+                  backgroundColor: isOverLimit ? '#FEE2E2' : '#FEF3C7',
+                  color: isOverLimit ? '#DC2626' : '#D97706'
+                }}
+              >
+                <AlertTriangle className="w-3 h-3" />
+                <span>탭이탈 {tabLeaveCount}/3</span>
+              </div>
+            )}
             <div className="hidden sm:block"><SaveStatusIndicator /></div>
-            <Timer startTime={startTime} duration={duration} />
+            <Timer startTime={startTime} duration={duration} onExpire={handleTimeExpired} />
           </div>
         </div>
 

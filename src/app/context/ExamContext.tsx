@@ -9,7 +9,14 @@ const STORAGE_KEYS = {
   SELECTED_ROLES: 'aict_exam_selectedRoles',
   USER_INFO: 'aict_exam_userInfo',
   EXAM_QUESTIONS: 'aict_exam_questions',
+  TAB_LEAVE_COUNT: 'aict_exam_tabLeaveCount',
+  TAB_LEAVE_TIME: 'aict_exam_tabLeaveTime',
+  IS_RECORDING: 'aict_exam_isRecording',
 } as const;
+
+// 탭 이탈 관련 상수
+const TAB_LEAVE_LIMIT = 3; // 탭 이탈 횟수 제한
+const TAB_LEAVE_TIME_LIMIT = 60; // 총 탭 이탈 시간 제한 (초)
 
 export interface UserInfo {
   name: string;
@@ -35,6 +42,14 @@ const EMPTY_EXAM_QUESTIONS: ExamQuestionSet = {
   part2: [],
 };
 
+// 탭 이탈 감지 정보
+interface TabLeaveInfo {
+  count: number;
+  totalTime: number; // 초 단위
+  isOverLimit: boolean;
+  isTimeOverLimit: boolean;
+}
+
 interface ExamContextType {
   answers: Answer[];
   setAnswer: (partId: number, questionId: string, answer: any) => void;
@@ -53,6 +68,12 @@ interface ExamContextType {
   // 문항 세트 관련
   examQuestions: ExamQuestionSet;
   initializeExamQuestions: (part1All: Part1Question[], part2All: Part2Question[]) => void;
+  // 탭 이탈 감지 관련
+  tabLeaveInfo: TabLeaveInfo;
+  incrementTabLeave: (leaveDuration: number) => void;
+  // 녹화 상태 관련
+  isRecording: boolean;
+  setIsRecording: (value: boolean) => void;
 }
 
 const ExamContext = createContext<ExamContextType | undefined>(undefined);
@@ -113,6 +134,36 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
+  // 탭 이탈 카운트 상태
+  const [tabLeaveCount, setTabLeaveCount] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.TAB_LEAVE_COUNT);
+      return saved ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  // 탭 이탈 총 시간 (초)
+  const [tabLeaveTime, setTabLeaveTime] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.TAB_LEAVE_TIME);
+      return saved ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  // 녹화 상태
+  const [isRecording, setIsRecordingState] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.IS_RECORDING);
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   // LocalStorage에 자동 저장
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ANSWERS, JSON.stringify(answers));
@@ -144,11 +195,38 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [examQuestions]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.TAB_LEAVE_COUNT, String(tabLeaveCount));
+  }, [tabLeaveCount]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.TAB_LEAVE_TIME, String(tabLeaveTime));
+  }, [tabLeaveTime]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.IS_RECORDING, String(isRecording));
+  }, [isRecording]);
+
   // Wrapper 함수들 (LocalStorage 저장은 useEffect에서 처리)
   const setStartTime = (time: number) => setStartTimeState(time);
   const setConsented = (value: boolean) => setConsentedState(value);
   const setSelectedRoles = (roles: string[]) => setSelectedRolesState(roles);
   const setUserInfo = (info: UserInfo) => setUserInfoState(info);
+  const setIsRecording = (value: boolean) => setIsRecordingState(value);
+
+  // 탭 이탈 정보 계산
+  const tabLeaveInfo: TabLeaveInfo = {
+    count: tabLeaveCount,
+    totalTime: tabLeaveTime,
+    isOverLimit: tabLeaveCount >= TAB_LEAVE_LIMIT,
+    isTimeOverLimit: tabLeaveTime >= TAB_LEAVE_TIME_LIMIT,
+  };
+
+  // 탭 이탈 카운트 증가
+  const incrementTabLeave = (leaveDuration: number) => {
+    setTabLeaveCount(prev => prev + 1);
+    setTabLeaveTime(prev => prev + Math.round(leaveDuration));
+  };
 
   // 시험 문항 초기화 (역량별 추출 + 선택지 셔플)
   const initializeExamQuestions = (part1All: Part1Question[], part2All: Part2Question[]) => {
@@ -171,6 +249,9 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     setSelectedRolesState([]);
     setUserInfoState(null);
     setExamQuestions(EMPTY_EXAM_QUESTIONS);
+    setTabLeaveCount(0);
+    setTabLeaveTime(0);
+    setIsRecordingState(false);
     Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
   };
 
@@ -229,7 +310,11 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
       setUserInfo,
       clearExamData,
       examQuestions,
-      initializeExamQuestions
+      initializeExamQuestions,
+      tabLeaveInfo,
+      incrementTabLeave,
+      isRecording,
+      setIsRecording,
     }}>
       {children}
     </ExamContext.Provider>

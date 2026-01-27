@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useExam } from '../context/ExamContext';
-import { Download, Award, TrendingUp, CheckCircle2, Target, Lightbulb, Share2, FileText, AlertCircle, Loader2, Key, X } from 'lucide-react';
+import { Download, Award, TrendingUp, CheckCircle2, Target, Lightbulb, Share2, FileText, AlertCircle, Loader2, Key, X, QrCode } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { part1Questions, part2Questions } from '../data/questions';
 import { getJobTasks, getJobInfo } from '../data/part3-data';
@@ -23,6 +23,14 @@ import {
   calculateTotalPoints,
   isPassed,
 } from '../services/scoring';
+import {
+  downloadCertificatePDF,
+  generateCertificateId,
+  calculateExpiryDate,
+  CertificateData,
+} from '../services/certificateGenerator';
+import { CertificateQRCode } from '../components/CertificateQRCode';
+import { useAuth } from '../context/AuthContext';
 
 // 색상 상수
 const COLORS = {
@@ -41,9 +49,12 @@ const COLORS = {
 
 export const Results = () => {
   const navigate = useNavigate();
-  const { answers, selectedRoles, examQuestions } = useExam();
+  const { answers, selectedRoles, examQuestions, userInfo } = useExam();
+  const { user } = useAuth();
 
   const [showApiModal, setShowApiModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [certificate, setCertificate] = useState<CertificateData | null>(null);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('aict_api_key') || '');
   const [isGrading, setIsGrading] = useState(false);
   const [gradingProgress, setGradingProgress] = useState({ completed: 0, total: 0 });
@@ -120,6 +131,53 @@ export const Results = () => {
   const part1TotalPoints = calculateTotalPoints(part1Scores);
   const part2TotalPoints = calculateTotalPoints(part2Scores);
   const part3TotalPoints = calculateTotalPoints(part3Scores);
+
+  // 인증서 데이터 생성/복원
+  useEffect(() => {
+    if (passed) {
+      // 기존 인증서 확인
+      const savedCert = localStorage.getItem('aict_certificate');
+      if (savedCert) {
+        setCertificate(JSON.parse(savedCert));
+      } else {
+        // 새 인증서 생성
+        const examDate = new Date().toISOString().split('T')[0];
+        const newCert: CertificateData = {
+          certificateId: generateCertificateId(),
+          name: user?.name || userInfo?.name || '응시자',
+          score: totalPoints,
+          jobRole: jobInfo?.jobTitle || selectedJobCode || '미지정',
+          examDate,
+          expiryDate: calculateExpiryDate(new Date()),
+          competencies: normalizedScores,
+        };
+        setCertificate(newCert);
+        localStorage.setItem('aict_certificate', JSON.stringify(newCert));
+
+        // 응시 이력 저장
+        const history = JSON.parse(localStorage.getItem('aict_exam_history') || '[]');
+        history.unshift({
+          date: examDate,
+          jobRole: jobInfo?.jobTitle || selectedJobCode,
+          score: totalPoints,
+          passed: true,
+        });
+        localStorage.setItem('aict_exam_history', JSON.stringify(history.slice(0, 10)));
+      }
+    }
+  }, [passed, totalPoints, normalizedScores, user, userInfo, jobInfo, selectedJobCode]);
+
+  // PDF 다운로드
+  const handleDownloadPDF = async () => {
+    if (certificate) {
+      await downloadCertificatePDF(certificate);
+    }
+  };
+
+  // LinkedIn 공유 (Mock)
+  const handleLinkedInShare = () => {
+    alert('LinkedIn 연동은 준비 중입니다. 인증서 PDF를 다운로드하여 직접 공유해주세요.');
+  };
 
   const handleGrading = async () => {
     if (!apiKey) {
@@ -370,45 +428,99 @@ export const Results = () => {
         </div>
 
         {/* Certificate */}
-        <div className="rounded-lg p-8 mb-8" style={{ backgroundColor: COLORS.navy }}>
-          <div className="flex items-center gap-3 mb-6">
-            <Award className="w-5 h-5" style={{ color: COLORS.gold }} />
-            <h2 className="text-lg font-bold text-white">인증서</h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div className="bg-white rounded-lg p-8 text-center">
-              <div className="w-16 h-16 rounded-lg mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: COLORS.navy }}>
-                <Award className="w-8 h-8" style={{ color: COLORS.gold }} />
-              </div>
-              <div className="text-xl font-bold mb-1" style={{ color: COLORS.navy }}>AICT Essential</div>
-              <div className="text-sm mb-4" style={{ color: COLORS.textMuted }}>AI 역량 인증</div>
-              <div className={`inline-block px-4 py-2 rounded text-sm font-bold ${passed ? 'text-white' : ''}`} style={{ backgroundColor: passed ? COLORS.success : COLORS.border }}>
-                {totalPoints}/100
-              </div>
+        {passed && certificate && (
+          <div className="rounded-lg p-8 mb-8" style={{ backgroundColor: COLORS.navy }}>
+            <div className="flex items-center gap-3 mb-6">
+              <Award className="w-5 h-5" style={{ color: COLORS.gold }} />
+              <h2 className="text-lg font-bold text-white">인증서</h2>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-sm" style={{ color: COLORS.goldLight }}>인증을 공유하세요</p>
-              <button className="w-full px-4 py-3 bg-white rounded-lg font-medium flex items-center justify-center gap-2" style={{ color: COLORS.navy }}>
-                <Share2 className="w-4 h-4" /> LinkedIn
-              </button>
-              <button className="w-full px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 border" style={{ borderColor: COLORS.goldLight, color: COLORS.goldLight }}>
-                <Download className="w-4 h-4" /> 다운로드
-              </button>
+            <div className="grid md:grid-cols-2 gap-6 items-center">
+              <div className="bg-white rounded-lg p-8 text-center">
+                <div className="w-16 h-16 rounded-lg mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: COLORS.navy }}>
+                  <Award className="w-8 h-8" style={{ color: COLORS.gold }} />
+                </div>
+                <div className="text-xl font-bold mb-1" style={{ color: COLORS.navy }}>AICT Essential</div>
+                <div className="text-sm mb-2" style={{ color: COLORS.textMuted }}>AI 역량 인증</div>
+                <div className="text-xs mb-1" style={{ color: COLORS.textMuted }}>{certificate.name}</div>
+                <div className="text-xs mb-4" style={{ color: COLORS.textMuted }}>
+                  인증번호: {certificate.certificateId}
+                </div>
+                <div className="inline-block px-4 py-2 rounded text-sm font-bold text-white" style={{ backgroundColor: COLORS.success }}>
+                  {totalPoints}/100 PASS
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm" style={{ color: COLORS.goldLight }}>인증을 공유하세요</p>
+                <button
+                  onClick={handleLinkedInShare}
+                  className="w-full px-4 py-3 bg-white rounded-lg font-medium flex items-center justify-center gap-2"
+                  style={{ color: COLORS.navy }}
+                >
+                  <Share2 className="w-4 h-4" /> LinkedIn 공유
+                </button>
+                <button
+                  onClick={handleDownloadPDF}
+                  className="w-full px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 border"
+                  style={{ borderColor: COLORS.goldLight, color: COLORS.goldLight }}
+                >
+                  <Download className="w-4 h-4" /> PDF 다운로드
+                </button>
+                <button
+                  onClick={() => setShowQRModal(true)}
+                  className="w-full px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 border"
+                  style={{ borderColor: COLORS.goldLight, color: COLORS.goldLight }}
+                >
+                  <QrCode className="w-4 h-4" /> QR코드 보기
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <button onClick={() => alert('PDF 다운로드 기능 준비 중')} className="flex-1 px-6 py-4 bg-white border rounded-lg font-medium flex items-center justify-center gap-2" style={{ borderColor: COLORS.border, color: COLORS.navy }}>
-            <Download className="w-5 h-5" /> 리포트 다운로드
-          </button>
-          <button onClick={() => navigate('/')} className="flex-1 px-6 py-4 text-white rounded-lg font-semibold" style={{ backgroundColor: COLORS.navy }}>
-            홈으로
+          {passed && certificate && (
+            <button
+              onClick={handleDownloadPDF}
+              className="flex-1 px-6 py-4 bg-white border rounded-lg font-medium flex items-center justify-center gap-2"
+              style={{ borderColor: COLORS.border, color: COLORS.navy }}
+            >
+              <Download className="w-5 h-5" /> 인증서 다운로드
+            </button>
+          )}
+          <button
+            onClick={() => user ? navigate('/dashboard') : navigate('/')}
+            className="flex-1 px-6 py-4 text-white rounded-lg font-semibold"
+            style={{ backgroundColor: COLORS.navy }}
+          >
+            {user ? '마이페이지로' : '홈으로'}
           </button>
         </div>
+
+        {/* QR Modal */}
+        {showQRModal && certificate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-xl p-6 max-w-sm w-full">
+              <h3 className="font-bold text-center mb-4" style={{ color: COLORS.navy }}>인증서 QR코드</h3>
+              <div className="flex justify-center mb-4">
+                <CertificateQRCode certificateId={certificate.certificateId} size={200} />
+              </div>
+              <p className="text-xs text-center mb-4" style={{ color: COLORS.textMuted }}>
+                인증번호: {certificate.certificateId}<br />
+                유효기간: {certificate.examDate} ~ {certificate.expiryDate}
+              </p>
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="w-full py-3 rounded-lg font-medium text-white"
+                style={{ backgroundColor: COLORS.navy }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
 
         {passed && (
           <div className="mt-8 p-6 rounded-lg border" style={{ backgroundColor: '#ECFDF5', borderColor: COLORS.success }}>

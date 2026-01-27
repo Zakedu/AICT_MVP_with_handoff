@@ -1,9 +1,11 @@
-import { useNavigate } from 'react-router-dom';
-import { BookOpen, MessageSquare, Clock, FileText, Settings, ChevronRight } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { BookOpen, MessageSquare, Clock, FileText, Settings, ChevronRight, User, LogIn } from 'lucide-react';
 import { EssentialBadge } from '../components/EssentialBadge';
+import { useAuth } from '../context/AuthContext';
 
 export const Landing = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const parts = [
     {
@@ -43,7 +45,55 @@ export const Landing = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F8F9FA' }}>
-      <div className="max-w-4xl mx-auto px-6 py-20">
+      {/* Top Navigation */}
+      <nav className="bg-white border-b" style={{ borderColor: '#E5E7EB' }}>
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <EssentialBadge size="small" showLabel={false} />
+            <span className="font-bold" style={{ color: '#1E3A5F' }}>AICT Essential</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            {isAuthenticated && user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-2 text-sm font-medium"
+                  style={{ color: '#1E3A5F' }}
+                >
+                  <User className="w-4 h-4" />
+                  {user.name}님
+                </Link>
+                <button
+                  onClick={() => logout()}
+                  className="text-sm"
+                  style={{ color: '#64748B' }}
+                >
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm font-medium"
+                  style={{ color: '#64748B' }}
+                >
+                  로그인
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-4 py-2 text-sm font-medium rounded-lg text-white"
+                  style={{ backgroundColor: '#1E3A5F' }}
+                >
+                  회원가입
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Header */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-8">
@@ -136,16 +186,39 @@ export const Landing = () => {
             className="px-8 py-4 bg-white border rounded-lg transition-all font-medium hover:shadow-md"
             style={{ borderColor: '#E5E7EB', color: '#1E3A5F' }}
           >
-            연습 문제
+            무료 체험
           </button>
           <button
-            onClick={() => navigate('/rules')}
+            onClick={() => navigate(isAuthenticated ? '/env-check' : '/login')}
             className="px-8 py-4 text-white rounded-lg transition-all font-semibold hover:opacity-90 flex items-center justify-center gap-2"
             style={{ backgroundColor: '#1E3A5F' }}
           >
-            시험 시작
+            {isAuthenticated ? '시험 응시' : '로그인 후 응시'}
             <ChevronRight className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Quick Info */}
+        <div className="bg-white rounded-lg border p-6 mb-8" style={{ borderColor: '#E5E7EB' }}>
+          <h3 className="font-bold mb-4" style={{ color: '#1E3A5F' }}>응시 안내</h3>
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p style={{ color: '#64748B' }}>응시료</p>
+              <p className="font-bold" style={{ color: '#1E3A5F' }}>49,000원</p>
+            </div>
+            <div>
+              <p style={{ color: '#64748B' }}>소요시간</p>
+              <p className="font-bold" style={{ color: '#1E3A5F' }}>총 100분</p>
+            </div>
+            <div>
+              <p style={{ color: '#64748B' }}>합격기준</p>
+              <p className="font-bold" style={{ color: '#1E3A5F' }}>70점 이상</p>
+            </div>
+            <div>
+              <p style={{ color: '#64748B' }}>유효기간</p>
+              <p className="font-bold" style={{ color: '#1E3A5F' }}>1년</p>
+            </div>
+          </div>
         </div>
 
         {/* Footer Note */}
