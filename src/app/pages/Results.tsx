@@ -47,6 +47,141 @@ const COLORS = {
   error: '#DC2626',
 };
 
+// 데모 모드 데이터
+const DEMO_MODE = true; // 데모용 (나중에 false로 변경)
+
+const DEMO_SCORES = {
+  part1Correct: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q8', 'q9', 'q10', 'q11', 'q12'], // 12개 중 11개 정답
+  part2Correct: ['dragdrop', 'ordering', 'highlight'], // 4개 중 3개 정답
+  part3Results: [
+    { taskId: 'task1', score: 18, maxScore: 20, feedback: '프롬프트가 명확하고 구조적입니다.' },
+    { taskId: 'task2', score: 16, maxScore: 20, feedback: '개인정보 보호 관점이 잘 반영되었습니다.' },
+    { taskId: 'task3', score: 14, maxScore: 20, feedback: '결과 검증 부분을 보완하면 좋겠습니다.' },
+  ],
+};
+
+// 루브릭 기반 피드백 데이터
+const RUBRIC_FEEDBACK: Record<string, { level: 'excellent' | 'good' | 'needs_improvement'; description: string; rubric: string[] }> = {
+  defining: {
+    level: 'excellent',
+    description: 'AI 개념과 용어를 정확하게 이해하고 있습니다.',
+    rubric: [
+      '✓ LLM, 토큰, 환각 등 핵심 용어 이해',
+      '✓ AI 모델의 작동 원리 파악',
+      '✓ AI 기술의 한계와 가능성 인식',
+    ],
+  },
+  prompting: {
+    level: 'good',
+    description: '프롬프트 설계 능력이 양호하나 일부 개선이 필요합니다.',
+    rubric: [
+      '✓ 역할-맥락-지시 구조 사용',
+      '△ 제약 조건 명시 부족',
+      '✓ 출력 형식 지정 능력',
+    ],
+  },
+  protecting: {
+    level: 'excellent',
+    description: '개인정보 보호 및 보안 의식이 우수합니다.',
+    rubric: [
+      '✓ 민감 정보 마스킹 실천',
+      '✓ 데이터 유출 위험 인식',
+      '✓ 보안 가이드라인 준수',
+    ],
+  },
+  refining: {
+    level: 'needs_improvement',
+    description: 'AI 출력 검증 역량 강화가 필요합니다.',
+    rubric: [
+      '△ 사실 확인 절차 미흡',
+      '✗ 교차 검증 부족',
+      '△ 출처 확인 습관화 필요',
+    ],
+  },
+  acumen: {
+    level: 'good',
+    description: '윤리적 판단력이 양호합니다.',
+    rubric: [
+      '✓ 저작권 인식',
+      '✓ AI 편향 가능성 이해',
+      '△ 책임 소재 판단 개선 필요',
+    ],
+  },
+  integrating: {
+    level: 'good',
+    description: '업무 통합 능력이 양호합니다.',
+    rubric: [
+      '✓ AI 도구 활용 시나리오 이해',
+      '△ 워크플로우 최적화 여지 있음',
+      '✓ 협업 도구와의 연계 가능',
+    ],
+  },
+};
+
+// 직무별 피드백 데이터
+const JOB_FEEDBACK: Record<string, { strengths: string[]; improvements: string[]; recommendation: string }> = {
+  HR: {
+    strengths: [
+      '채용 공고 작성 시 AI 활용 능력 우수',
+      '면접 질문 생성에 적절한 프롬프트 사용',
+      '개인정보 보호 의식이 높음',
+    ],
+    improvements: [
+      '지원자 평가 시 AI 편향 검토 필요',
+      '채용 데이터 분석 시 교차 검증 강화',
+    ],
+    recommendation: 'HR 업무에서 AI를 효과적으로 활용할 준비가 되어 있습니다. 채용 결정 시 AI 결과물에 대한 비판적 검토를 강화하면 더욱 좋겠습니다.',
+  },
+  MKT: {
+    strengths: [
+      '마케팅 콘텐츠 생성 능력 우수',
+      '타겟 오디언스 맞춤 프롬프트 설계',
+      'A/B 테스트 시나리오 구성 능력',
+    ],
+    improvements: [
+      '저작권 관련 검토 강화 필요',
+      '브랜드 톤앤매너 일관성 유지',
+    ],
+    recommendation: '마케팅 영역에서 AI 활용도가 높습니다. 생성된 콘텐츠의 저작권 및 브랜드 가이드라인 준수 여부를 꼼꼼히 확인하세요.',
+  },
+  SALES: {
+    strengths: [
+      '고객 응대 스크립트 작성 능력',
+      '제안서 초안 생성 활용',
+      '고객 데이터 분석 이해',
+    ],
+    improvements: [
+      '고객 정보 보안 의식 강화',
+      '계약 관련 법적 검토 필요',
+    ],
+    recommendation: '영업 업무에 AI를 잘 활용할 수 있습니다. 고객 정보 취급 시 보안에 더욱 주의를 기울이세요.',
+  },
+  DEV: {
+    strengths: [
+      '코드 생성 및 리뷰 활용 우수',
+      '기술 문서 작성 능력',
+      '버그 분석 시나리오 이해',
+    ],
+    improvements: [
+      '생성된 코드의 보안 취약점 검토',
+      '라이선스 호환성 확인 필요',
+    ],
+    recommendation: '개발 업무에서 AI를 효과적으로 활용할 준비가 되어 있습니다. 생성된 코드의 보안 및 라이선스 검토를 습관화하세요.',
+  },
+  ADMIN: {
+    strengths: [
+      '문서 작성 및 요약 능력',
+      '일정 관리 자동화 이해',
+      '회의록 정리 활용',
+    ],
+    improvements: [
+      '기밀 문서 취급 시 주의 필요',
+      '정확성 검증 습관화',
+    ],
+    recommendation: '사무행정 업무에 AI를 잘 활용할 수 있습니다. 기밀 정보 취급 시 AI 도구 사용에 주의하세요.',
+  },
+};
+
 export const Results = () => {
   const navigate = useNavigate();
   const { answers, selectedRoles, examQuestions, userInfo } = useExam();
@@ -82,6 +217,9 @@ export const Results = () => {
   }, [part3Results]);
 
   const part1CorrectIds = useMemo(() => {
+    if (DEMO_MODE) {
+      return DEMO_SCORES.part1Correct;
+    }
     return part1Qs
       .filter(q => {
         const answer = answers.find(a => a.partId === 1 && a.questionId === q.id);
@@ -91,6 +229,9 @@ export const Results = () => {
   }, [part1Qs, answers]);
 
   const part2CorrectTypes = useMemo(() => {
+    if (DEMO_MODE) {
+      return DEMO_SCORES.part2Correct;
+    }
     return part2Qs
       .filter(q => {
         const answer = answers.find(a => a.partId === 2 && a.questionId === q.id);
@@ -116,6 +257,10 @@ export const Results = () => {
   const part2Scores = useMemo(() => calculatePart2Scores(part2CorrectTypes), [part2CorrectTypes]);
 
   const part3Scores = useMemo(() => {
+    if (DEMO_MODE) {
+      // 데모용 Part 3 점수 (합격 수준)
+      return { defining: 10, prompting: 12, protecting: 10, refining: 8, acumen: 10, integrating: 10 };
+    }
     if (part3Results.length > 0) {
       return calculatePart3Scores(part3Results);
     }
@@ -403,6 +548,102 @@ export const Results = () => {
             </div>
           </div>
         </div>
+
+        {/* Rubric-based Feedback */}
+        {DEMO_MODE && (
+          <div className="bg-white rounded-lg p-8 border mb-8" style={{ borderColor: COLORS.border }}>
+            <div className="flex items-center gap-3 mb-6">
+              <FileText className="w-5 h-5" style={{ color: COLORS.gold }} />
+              <h2 className="text-lg font-bold" style={{ color: COLORS.navy }}>루브릭 기반 역량 평가</h2>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {(Object.keys(RUBRIC_FEEDBACK) as IndicatorType[]).map((key) => {
+                const feedback = RUBRIC_FEEDBACK[key];
+                const levelColors = {
+                  excellent: { bg: '#ECFDF5', border: COLORS.success, text: COLORS.success, label: '우수' },
+                  good: { bg: '#FEF9C3', border: '#CA8A04', text: '#CA8A04', label: '양호' },
+                  needs_improvement: { bg: '#FEE2E2', border: COLORS.error, text: COLORS.error, label: '보완 필요' },
+                };
+                const levelStyle = levelColors[feedback.level];
+
+                return (
+                  <div key={key} className="p-4 rounded-lg border" style={{ backgroundColor: levelStyle.bg, borderColor: levelStyle.border }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold" style={{ color: COLORS.navy }}>{indicatorInfo[key].nameKo}</span>
+                      <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: levelStyle.border, color: 'white' }}>
+                        {levelStyle.label}
+                      </span>
+                    </div>
+                    <p className="text-sm mb-3" style={{ color: COLORS.textMuted }}>{feedback.description}</p>
+                    <div className="space-y-1">
+                      {feedback.rubric.map((item, idx) => (
+                        <p key={idx} className="text-xs" style={{ color: COLORS.navy }}>{item}</p>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Job-specific Feedback */}
+        {DEMO_MODE && (
+          <div className="bg-white rounded-lg p-8 border mb-8" style={{ borderColor: COLORS.border }}>
+            <div className="flex items-center gap-3 mb-6">
+              <Lightbulb className="w-5 h-5" style={{ color: COLORS.gold }} />
+              <h2 className="text-lg font-bold" style={{ color: COLORS.navy }}>직무 대비 피드백</h2>
+              {jobInfo && <span className="text-sm px-3 py-1 rounded" style={{ backgroundColor: COLORS.goldMuted, color: COLORS.navy }}>{jobInfo.jobTitle}</span>}
+            </div>
+
+            {(() => {
+              const jobFeedback = JOB_FEEDBACK[selectedJobCode] || JOB_FEEDBACK['HR'];
+              return (
+                <div className="space-y-6">
+                  {/* Strengths */}
+                  <div>
+                    <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: COLORS.success }}>
+                      <CheckCircle2 className="w-4 h-4" />
+                      강점
+                    </h3>
+                    <div className="space-y-2">
+                      {jobFeedback.strengths.map((item, idx) => (
+                        <div key={idx} className="p-3 rounded-lg flex items-start gap-3" style={{ backgroundColor: '#ECFDF5' }}>
+                          <span className="text-sm" style={{ color: COLORS.navy }}>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Improvements */}
+                  <div>
+                    <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: '#CA8A04' }}>
+                      <AlertCircle className="w-4 h-4" />
+                      개선 영역
+                    </h3>
+                    <div className="space-y-2">
+                      {jobFeedback.improvements.map((item, idx) => (
+                        <div key={idx} className="p-3 rounded-lg flex items-start gap-3" style={{ backgroundColor: '#FEF9C3' }}>
+                          <span className="text-sm" style={{ color: COLORS.navy }}>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recommendation */}
+                  <div className="p-4 rounded-lg" style={{ backgroundColor: COLORS.goldMuted, border: `1px solid ${COLORS.gold}` }}>
+                    <h3 className="font-bold mb-2 flex items-center gap-2" style={{ color: COLORS.navy }}>
+                      <Target className="w-4 h-4" style={{ color: COLORS.gold }} />
+                      종합 의견
+                    </h3>
+                    <p className="text-sm" style={{ color: COLORS.navy }}>{jobFeedback.recommendation}</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Improvements */}
         <div className="bg-white rounded-lg p-8 border mb-8" style={{ borderColor: COLORS.border }}>

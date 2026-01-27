@@ -24,8 +24,39 @@ const COLORS = {
   error: '#DC2626',
 };
 
+// 데모 모드
+const DEMO_MODE = true;
+
+// 데모용 인증서 데이터
+const DEMO_CERTIFICATE: CertificateData = {
+  certificateId: 'AICT-2026-001234',
+  name: '데모 사용자',
+  score: 82,
+  jobRole: '인사관리 (HR)',
+  examDate: '2026-01-15',
+  expiryDate: '2027-01-15',
+  competencies: {
+    defining: 85,
+    prompting: 78,
+    protecting: 90,
+    refining: 72,
+    acumen: 80,
+    integrating: 85,
+  },
+};
+
+// 데모용 응시 이력
+const DEMO_EXAM_HISTORY = [
+  { date: '2026-01-15', jobRole: '인사관리 (HR)', score: 82, passed: true },
+  { date: '2025-12-20', jobRole: '인사관리 (HR)', score: 65, passed: false },
+  { date: '2025-11-10', jobRole: '마케팅 (MKT)', score: 58, passed: false },
+];
+
 // 저장된 인증서 정보 가져오기
 const getSavedCertificate = (): CertificateData | null => {
+  if (DEMO_MODE) {
+    return DEMO_CERTIFICATE;
+  }
   try {
     const saved = localStorage.getItem('aict_certificate');
     return saved ? JSON.parse(saved) : null;
@@ -36,6 +67,9 @@ const getSavedCertificate = (): CertificateData | null => {
 
 // 응시 이력 가져오기
 const getExamHistory = () => {
+  if (DEMO_MODE) {
+    return DEMO_EXAM_HISTORY;
+  }
   try {
     const saved = localStorage.getItem('aict_exam_history');
     return saved ? JSON.parse(saved) : [];
