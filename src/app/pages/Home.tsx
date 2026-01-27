@@ -1,19 +1,22 @@
 import { useNavigate } from 'react-router-dom';
-import { 
-  Lightbulb, 
-  MessageSquare, 
-  Shield, 
-  CircleCheck, 
-  Workflow, 
+import {
+  Lightbulb,
+  MessageSquare,
+  Shield,
+  CircleCheck,
+  Workflow,
   Scale,
   Clock,
   FileText,
   BookOpen,
   ChevronDown,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  User,
+  LogOut
 } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 // ============================================
 // DESIGN SYSTEM: Slate + Green + Glassmorphism
@@ -41,9 +44,15 @@ const colors = {
 // ============================================
 const GNB = () => {
   const navigate = useNavigate();
-  
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
-    <nav 
+    <nav
       className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
       style={{
         background: 'rgba(15, 23, 42, 0.7)',
@@ -54,24 +63,24 @@ const GNB = () => {
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div 
+        <div
           className="font-bold text-xl tracking-wider cursor-pointer"
           style={{ color: colors.white }}
           onClick={() => navigate('/')}
         >
           AICT<span style={{ color: colors.green[500] }}>.</span>
         </div>
-        
+
         {/* Menu */}
-        <div className="flex items-center gap-8">
-          <button 
+        <div className="flex items-center gap-6">
+          <button
             onClick={() => navigate('/landing')}
             className="text-sm font-medium transition-colors hover:opacity-100"
             style={{ color: colors.slate[200], opacity: 0.8 }}
           >
             시험 응시
           </button>
-          <a 
+          <a
             href="https://zakedu.github.io/genai-book/"
             target="_blank"
             rel="noopener noreferrer"
@@ -80,13 +89,44 @@ const GNB = () => {
           >
             교재 <ExternalLink className="w-3 h-3" />
           </a>
-          <button 
-            onClick={() => navigate('/results')}
-            className="text-sm font-medium transition-colors hover:opacity-100"
-            style={{ color: colors.slate[200], opacity: 0.8 }}
-          >
-            결과 조회
-          </button>
+
+          {/* Auth Buttons */}
+          {isAuthenticated ? (
+            <>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-sm font-medium transition-colors hover:opacity-100 flex items-center gap-1"
+                style={{ color: colors.slate[200], opacity: 0.8 }}
+              >
+                <User className="w-4 h-4" />
+                {user?.name}
+              </button>
+              <button
+                onClick={handleLogout}
+                className="text-sm font-medium transition-colors hover:opacity-100 flex items-center gap-1"
+                style={{ color: colors.slate[400], opacity: 0.8 }}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/login')}
+                className="text-sm font-medium transition-colors hover:opacity-100"
+                style={{ color: colors.slate[200], opacity: 0.8 }}
+              >
+                로그인
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                className="text-sm font-medium px-4 py-2 rounded-lg transition-all hover:opacity-90"
+                style={{ backgroundColor: colors.green[500], color: colors.white }}
+              >
+                회원가입
+              </button>
+            </>
+          )}
         </div>
       </div>
     </nav>
