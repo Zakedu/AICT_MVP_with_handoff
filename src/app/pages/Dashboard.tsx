@@ -51,11 +51,12 @@ export const Dashboard = () => {
   const [examHistory, setExamHistory] = useState<any[]>([]);
   const [showQRModal, setShowQRModal] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, isLoading, navigate]);
+  // 로그인 체크 비활성화 (데모용)
+  // useEffect(() => {
+  //   if (!isLoading && !isAuthenticated) {
+  //     navigate('/login');
+  //   }
+  // }, [isAuthenticated, isLoading, navigate]);
 
   useEffect(() => {
     setCertificate(getSavedCertificate());
@@ -87,7 +88,8 @@ export const Dashboard = () => {
     );
   }
 
-  if (!user) return null;
+  // 데모용: user가 없어도 표시
+  const demoUser = user || { name: '데모 사용자', email: 'demo@aict.kr', createdAt: '2026-01-01' };
 
   const daysUntilExpiry = certificate
     ? Math.ceil((new Date(certificate.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -103,7 +105,7 @@ export const Dashboard = () => {
             <span className="font-bold" style={{ color: COLORS.navy }}>AICT Essential</span>
           </Link>
           <div className="flex items-center gap-4">
-            <span className="text-sm" style={{ color: COLORS.navy }}>{user.name}님</span>
+            <span className="text-sm" style={{ color: COLORS.navy }}>{demoUser.name}님</span>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 text-sm"
@@ -129,9 +131,9 @@ export const Dashboard = () => {
                 <User className="w-8 h-8" style={{ color: COLORS.navy }} />
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold" style={{ color: COLORS.navy }}>{user.name}</h2>
-                <p className="text-sm" style={{ color: COLORS.textMuted }}>{user.email}</p>
-                <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>가입일: {user.createdAt}</p>
+                <h2 className="text-xl font-bold" style={{ color: COLORS.navy }}>{demoUser.name}</h2>
+                <p className="text-sm" style={{ color: COLORS.textMuted }}>{demoUser.email}</p>
+                <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>가입일: {demoUser.createdAt}</p>
               </div>
               <button
                 className="px-4 py-2 rounded-lg text-sm"
