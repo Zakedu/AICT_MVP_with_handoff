@@ -23,6 +23,7 @@ import { IdentityVerify } from './pages/IdentityVerify';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminStats } from './pages/AdminStats';
 import { AdminUsers } from './pages/AdminUsers';
+import { ExamIntro } from './pages/ExamIntro';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
             <BrowserRouter basename="/aict-platform">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/exam-intro" element={<ExamIntro />} />
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
