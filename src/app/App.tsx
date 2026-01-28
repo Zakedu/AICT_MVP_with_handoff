@@ -17,6 +17,12 @@ import { EnvCheck } from './pages/EnvCheck';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
+import { Schedule } from './pages/Schedule';
+import { Payment } from './pages/Payment';
+import { IdentityVerify } from './pages/IdentityVerify';
+import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminStats } from './pages/AdminStats';
+import { AdminUsers } from './pages/AdminUsers';
 
 export default function App() {
   return (
@@ -31,6 +37,9 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/identity-verify" element={<IdentityVerify />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/env-check" element={<EnvCheck />} />
             <Route path="/rules" element={<RulesConsent />} />
@@ -39,6 +48,9 @@ export default function App() {
             <Route path="/part3" element={<Part3 />} />
             <Route path="/results" element={<Results />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/stats" element={<AdminStats />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/verify/:certificateId" element={<Verify />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

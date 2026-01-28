@@ -113,8 +113,8 @@ const GNB = () => {
 
   // 언어별 텍스트
   const texts = {
-    ko: { exam: '시험 응시', textbook: '교재', login: '로그인', signup: '회원가입' },
-    ja: { exam: '試験を受ける', textbook: '教材', login: 'ログイン', signup: '新規登録' },
+    ko: { schedule: '시험 일정', exam: '시험 응시', textbook: '교재', login: '로그인', signup: '회원가입' },
+    ja: { schedule: '試験日程', exam: '試験を受ける', textbook: '教材', login: 'ログイン', signup: '新規登録' },
   };
   const t = texts[language];
 
@@ -143,6 +143,13 @@ const GNB = () => {
           {/* Language Selector - 첫 번째 위치 */}
           <LanguageSelector />
 
+          <button
+            onClick={() => navigate('/schedule')}
+            className="text-sm font-medium transition-colors hover:opacity-100"
+            style={{ color: colors.slate[200], opacity: 0.8 }}
+          >
+            {t.schedule}
+          </button>
           <button
             onClick={() => navigate('/landing')}
             className="text-sm font-medium transition-colors hover:opacity-100"
